@@ -55,7 +55,7 @@ reset:
 	mov.w #0, r13 ; dash flag, seven segment shows dash when the flag is not 0.
 	mov.w #0, r8 ; manual reset flag for player 1
 	mov.w #0, r10 ; manual reset flag for player 2
-	;mov.b #0, r6 ; press when 0 flag
+	mov.b #0, r6 ; press when 0 flag
 
 mainloop:
 
@@ -74,6 +74,7 @@ TIMER_ISR:
 	jeq RESET_COUNTER ; if yes reset countdown
 	mov.w #0, r8 ; else reset the button flag for manual reset
 	mov.w #0, r10 ; else reset the button flag for manual reset
+	;mov.b #0, r6 ; dash reached 0 from 3 flag
 
     cmp.w #0, r4                           ; did countdown reach 0?
     jeq RESET_COUNTER                      ; if it reached, restart game
@@ -90,13 +91,11 @@ TIMER_ISR:
     reti
 
 RESET_COUNTER:
-;	cmp.w #0, r13
-;	jne DONT_TOGGLE
-;	mov.b #1, r11
-;DONT_TOGGLE:
-;	cmp.b #1, r11
-;	jne WAIT_PRESS
-	;mov.w #3, r13
+	cmp.b #1, r6 ; check that has dash been shown for 3 sec
+	jeq SKIP_MANUAL_RESET2
+	cmp.b #0, r11 ; check toggle flag
+	jeq STILL_DISPLAY_0
+
 ; comparisons & jumps for skipping the dash part when we reset the game manually (line 93 & 97)
 	cmp.w #2, r8
 	jne SKIP_MANUAL_RESET1
@@ -109,12 +108,21 @@ SKIP_MANUAL_RESET2:
 
 	mov.w #0, r8 ; manual reset flag for p1 = 0
 	mov.w #0, r10 ; manual reset flag for p2 = 0
+	mov.b #0, r6
 	mov.b #0, r7 ; r7 next round phase flag = 0
 	mov.b #0, r9 ; r9 zero flag = 0
 	mov.b #0, r11 ; r11 toggle flag = 0
 	mov.w #3, R4 ; reset countdown
 	call #UPDATE_DISPLAY
-;WAIT_PRESS:
+
+STILL_DISPLAY_0:
+	cmp.w #0, r13
+	jeq DONT_UPDATE
+	;dec.w r13
+	;cmp.w #1, r13
+	;jne DONT_UPDATE
+	call #UPDATE_DISPLAY
+DONT_UPDATE:
 	dec.b r12
     bic.w #CCIFG, &TA0CCTL0             ; clear interrupt flag
     reti
@@ -129,8 +137,8 @@ UPDATE_DISPLAY:
 	bis.b #00110000b, &P2OUT
 	cmp.b #1, r11              ; toggle flag check
     jeq buttonDASH              ; if toggle flag = 1, end the game and display dash
-    cmp.w #0, r13              ; Toggle flag kontrolü
-    jne DASH              ; Eðer toggle flag 1 deðilse, sayýyý göster
+    cmp.w #0, r13              ; Toggle flag kontrolï¿½
+    jne DASH              ; Eï¿½er toggle flag 1 deï¿½ilse, sayï¿½yï¿½ gï¿½ster
     cmp.w #3, R4
     jeq DISPLAY_3
     cmp.w #2, R4
@@ -149,28 +157,28 @@ DISPLAY_3:
     ret
 
 DISPLAY_2:
-	;cmp.b #1, r11              ; Toggle flag kontrolü
-    ;jeq DASH              ; Eðer toggle flag 1 deðilse, sayýyý göster
+	;cmp.b #1, r11              ; Toggle flag kontrolï¿½
+    ;jeq DASH              ; Eï¿½er toggle flag 1 deï¿½ilse, sayï¿½yï¿½ gï¿½ster
     bic.b #00110001b, &P1OUT;2
 	bic.b #00110000b, &P2OUT
     ret
 
 
 DISPLAY_1:
-	;cmp.b #1, r11              ; Toggle flag kontrolü
-    ;jeq DASH             ; Eðer toggle flag 1 deðilse, sayýyý göster
+	;cmp.b #1, r11              ; Toggle flag kontrolï¿½
+    ;jeq DASH             ; Eï¿½er toggle flag 1 deï¿½ilse, sayï¿½yï¿½ gï¿½ster
     bic.b #01000000b, &P1OUT;1
 	bic.b #00010000b, &P2OUT
 
     ret
 
 DISPLAY_0:
-	;cmp.b #1, r11              ; Toggle flag kontrolü
-    ;jeq DASH              ; Eðer toggle flag 1 deðilse, sayýyý göster
+	;cmp.b #1, r11              ; Toggle flag kontrolï¿½
+    ;jeq DASH              ; Eï¿½er toggle flag 1 deï¿½ilse, sayï¿½yï¿½ gï¿½ster
     bic.b #01110010b, &P1OUT;0
 	bic.b #00110000b, &P2OUT
 	mov.b #1, r9 ; r9 zero flag = 1
-	mov.w #3, r13
+	;mov.w #3, r13
 	ret
 
 buttonDASH:
@@ -183,6 +191,10 @@ DASH:
 	mov.b #0, r11
 	mov.b #0, R4
 	dec.w r13
+	cmp.w #0, r13
+	jne DONT_CHANGE_FLAG
+ 	mov.b #1, r6
+DONT_CHANGE_FLAG:
 	ret
 
 

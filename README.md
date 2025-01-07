@@ -96,3 +96,11 @@
   ```assembly
   mov.w #3, R4 ; Reset countdown
   call #UPDATE_DISPLAY
+
+##**Interrupt Vector Table 🗂️**
+**Button Interrupt:** Assigned to .int03.
+**Timer A0 Interrupt:** Assigned to .int09.
+**Reset Vector:** Assigned to .reset (system-level reset, not manual reset).
+
+##**Summary of Logic 📜**
+This code implements a competitive game with two players. The seven-segment display counts down from 3, decrementing every second using a timer interrupt. If the countdown reaches 0, it stays there until one player presses their button. The first button press after reaching 0 displays a dash (-) for 3 seconds before restarting the game. Players can also manually reset the game by pressing their button twice quickly. Flags (r7, r9, r11, r13, etc.) manage game states, such as the dash phase, keeping the display at 0, or resetting manually. The timer interrupt handles countdown updates and transitions, while button interrupts track player inputs, determining winners and resetting conditions. The code achieves synchronized gameplay through interrupts and state flags without continuous polling.
